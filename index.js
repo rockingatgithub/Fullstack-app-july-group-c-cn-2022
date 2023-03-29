@@ -1,6 +1,7 @@
 const express = require('express')
 const path = require('path')
 const db = require('./config/mongoose')
+const Student = require('./model/student')
 const PORT = 8000
 const app = express()
 
@@ -41,7 +42,18 @@ app.get('/home', (req, res) => {
     return res.sendFile(path.join(__dirname, '/index.html'))
 })
 
-app.get('/student', (req, res) => {
+app.get('/student/:id',async (req, res) => {
+    const id = req.params.id
+    const student = await Student.findById(id)
+    return res.status(200).json({
+        message: "Student fetched successfully",
+        data: student
+    })
+})
+
+app.get('/student', async (req, res) => {
+
+    const students = await Student.find({})
 
     return res.status(200).json({
         message: "Student fetched successfully",
@@ -50,27 +62,40 @@ app.get('/student', (req, res) => {
 
 })
 
-app.post('/student', (req, res) => {
+
+
+app.post('/student', async (req, res) => {
 
     console.log("the data", req.body)
 
-    students.push(req.body)
+    const student = await Student.create(req.body)
+
+    // students.push(req.body)
     return res.status(200).json({
         message: "Student fetched successfully",
-        data: students
+        data: student
     })
 
 })
 
-app.put('/student/:roll', (req, res) => {
-    const rollNo = parseInt(req.params.roll)
+app.put('/student', async (req, res) => {
+    const email = req.query.email
 
-    const index = students.findIndex((student) => student.roll === rollNo)
-    if(index != -1) {
-        students.splice(index, 1, req.body)
+    // const index = students.findIndex((student) => student.roll === rollNo)
+    // if(index != -1) {
+    //     students.splice(index, 1, req.body)
+    //     return res.status(200).json({
+    //         message: "Student fetched successfully",
+    //         data: students
+    //     })
+    // }
+
+    const student = await Student.findOneAndUpdate({email: email}, req.body, { new: true })
+
+    if (student) {
         return res.status(200).json({
-            message: "Student fetched successfully",
-            data: students
+                message: "Student fetched successfully",
+                data: student
         })
     }
 
