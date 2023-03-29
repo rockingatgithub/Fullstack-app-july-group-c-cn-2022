@@ -1,6 +1,7 @@
 const express = require('express')
 const path = require('path')
 const db = require('./config/mongoose')
+const Result = require('./model/report')
 const Student = require('./model/student')
 const PORT = 8000
 const app = express()
@@ -106,6 +107,24 @@ app.put('/student', async (req, res) => {
 
 })
 
+app.post('/result', async (req, res) => {
+
+    const result = await Result.create(req.body)
+    return res.status(200).json({
+        message: "Result fetched successfully",
+        data: result
+    })
+})
+
+
+app.get('/result', async (req, res) => {
+
+    const results = await Result.find({}).populate('student')
+    return res.status(200).json({
+        message: "Result fetched successfully",
+        data: results
+    })
+})
 
 
 
