@@ -5,6 +5,9 @@ const resultSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    session: {
+        type: Number,
+    },
     student: {
         type: mongoose.Types.ObjectId,
         ref: 'Student2'

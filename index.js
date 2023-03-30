@@ -54,7 +54,7 @@ app.get('/student/:id',async (req, res) => {
 
 app.get('/student', async (req, res) => {
 
-    const students = await Student.find({})
+    const students = await Student.find({}).populate('results')
 
     return res.status(200).json({
         message: "Student fetched successfully",
@@ -67,15 +67,28 @@ app.get('/student', async (req, res) => {
 
 app.post('/student', async (req, res) => {
 
-    console.log("the data", req.body)
+    try {
 
-    const student = await Student.create(req.body)
+        console.log("the data", req.body)
 
-    // students.push(req.body)
-    return res.status(200).json({
-        message: "Student fetched successfully",
-        data: student
-    })
+        const student = await Student.create(req.body)
+
+        // students.push(req.body)
+        return res.status(200).json({
+            message: "Student fetched successfully",
+            data: student
+        })
+
+    } catch(error) {
+
+        console.log(error)
+        return res.status(500).json({
+            message: "Internal server error",
+            data: null
+        })
+
+    }
+    
 
 })
 
@@ -110,6 +123,13 @@ app.put('/student', async (req, res) => {
 app.post('/result', async (req, res) => {
 
     const result = await Result.create(req.body)
+
+    const student = await Student.findById(req.body.student)
+
+    student.results.push(result._id)
+    // whenever we update the document manually we have to call the save method... 
+    await student.save()
+
     return res.status(200).json({
         message: "Result fetched successfully",
         data: result

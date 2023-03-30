@@ -14,6 +14,11 @@ const studentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    results: [{
+            type: mongoose.Types.ObjectId,
+            ref: 'Result'
+    }]
+    
 }, {
     timestamps: true
 })
