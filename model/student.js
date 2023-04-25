@@ -1,28 +1,29 @@
 const mongoose = require('mongoose')
 
+const candidateSchema = new mongoose.Schema({
 
-const studentSchema = new mongoose.Schema({
     name: {
         type: String,
+        required: true,
     },
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
     },
     password: {
         type: String,
         required: true,
     },
-    results: [{
-            type: mongoose.Types.ObjectId,
-            ref: 'Result'
+    interviews: [{
+        type: mongoose.Types.ObjectId,
+        ref: 'Interview'
     }]
-    
-}, {
-    timestamps: true
+
 })
 
-const Student = mongoose.model('Student2', studentSchema)
+const Candidate = mongoose.model('Candidate', candidateSchema)
+module.exports = Candidate
 
-module.exports = Student
+
+
