@@ -2,30 +2,45 @@ const express = require('express')
 const path = require('path')
 const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken')
+const cors = require('cors')
+const { OAuth2Client } = require('google-auth-library')
+
 const db = require('./config/mongoose')
-const passport = require('./config/passportLocalStrategy')
-const passportJWT = require('./config/passportJWTStrategy')
-const Result = require('./model/report')
+// const passport = require('./config/passportLocalStrategy')
+const passport = require('./config/passportJWTStrategy')
+// const Result = require('./model/report')
 const Student = require('./model/student')
 const PORT = 8000
 const app = express()
 
 let counter = 0
+app.use(cors())
 app.use(cookieParser())
-app.use(require('express-session')({ secret: 'keyboard cat', resave: true, saveUninitialized: true }));
+// app.use(require('express-session')({ secret: 'keyboard cat', resave: true, saveUninitialized: true }));
 app.use(express.urlencoded())
 app.use(express.json())
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session());
 // app.use();
 // custom middleware .....
 
 app.use((req, res, next) => {
     counter++
     // console.log("The counter", counter )
-    console.log("the session user",req.user, req.session.id, req.cookies)
+    // console.log("the session user",req.user, req.session.id, req.cookies)
     next()
 })
+
+const authMiddleware3 = (req, res, next) => {
+
+
+    if(req.user) {
+        next()
+    } else {
+        return res.status(401).json({ message: "User not found"})
+    }
+
+}
 
 const authMiddleware = async (req, res, next) => {
     console.log('the cookies', req.cookies)
@@ -52,34 +67,13 @@ const authMiddleware2 = async (req, res, next) => {
     }
 }
 
-// CRUD API
-
-const students = [
-    {
-        name: "shekhar",
-        roll: 23
-    },
-    {
-        name: "nilesh",
-        roll: 25
-    },
-    {
-        name: "nazim",
-        roll: 20
-    },
-    {
-        name: "prem",
-        roll: 21
-    },
-]
-
-app.use('/', require('./routes'))
+// app.use('/', require('./routes'))
 
 app.get('/home', (req, res) => {
     return res.sendFile(path.join(__dirname, '/index.html'))
 })
 
-app.get('/student/:id', passport.authenticate('session', { failureRedirect: '/login'}) ,async (req, res) => {
+app.get('/student/:id', authMiddleware3,  async (req, res) => {
     const id = req.params.id
     const student = await Student.findById(id)
     return res.status(200).json({
@@ -128,7 +122,7 @@ app.post('/student', async (req, res) => {
 
 })
 
-app.put('/student', async (req, res) => {
+app.put('/student', authMiddleware3 ,async (req, res) => {
     const email = req.query.email
 
     // const index = students.findIndex((student) => student.roll === rollNo)
@@ -156,42 +150,45 @@ app.put('/student', async (req, res) => {
 
 })
 
-app.post('/result', async (req, res) => {
+// app.post('/result', async (req, res) => {
 
-    const result = await Result.create(req.body)
+//     const result = await Result.create(req.body)
 
-    const student = await Student.findById(req.body.student)
+//     const student = await Student.findById(req.body.student)
 
-    student.results.push(result._id)
-    // whenever we update the document manually we have to call the save method... 
-    await student.save()
+//     student.results.push(result._id)
+//     // whenever we update the document manually we have to call the save method... 
+//     await student.save()
 
-    return res.status(200).json({
-        message: "Result fetched successfully",
-        data: result
-    })
-})
-
-
-app.get('/result', async (req, res) => {
-
-    const results = await Result.find({}).populate('student')
-    return res.status(200).json({
-        message: "Result fetched successfully",
-        data: results
-    })
-})
+//     return res.status(200).json({
+//         message: "Result fetched successfully",
+//         data: result
+//     })
+// })
 
 
-app.post('/login', passport.authenticate('local', { failureRedirect: '/login' }) ,async (req, res) => {
+// app.get('/result', async (req, res) => {
 
-    console.log("the user obj", req.user)
+//     const results = await Result.find({}).populate('student')
+//     return res.status(200).json({
+//         message: "Result fetched successfully",
+//         data: results
+//     })
+// })
+
+
+app.post('/login' ,async (req, res) => {
+
+    // console.log("the user obj", req.user)
     const student = await Student.findOne({ email: req.body.email })
+    // console.log(req.user)
     if (student) {
         // res.cookie('student', student._id)
+        const token = jwt.sign(student.id, 'test')
         return res.status(200).json({
             message: 'Student found successfully!',
-            data: student
+            data: req.user,
+            token: token
         })
     } else {
         return res.status(401).json({ message: "User not found"})
@@ -219,6 +216,51 @@ app.post('/login/jwt', async (req, res) => {
         return res.status(401).json({ message: "User not found"})
     }
 
+})
+
+app.post("/google", async (req, res) => {
+
+    try{
+
+        const client = new OAuth2Client('738549752925-ghcfe4qgitliag9vp7bm7vcvt3e0gdor.apps.googleusercontent.com')
+        const { token }  = req.body
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: '738549752925-ghcfe4qgitliag9vp7bm7vcvt3e0gdor.apps.googleusercontent.com'
+        });
+        const { name, email, picture } = ticket.getPayload();    
+    
+        let student = await Student.findOne({email: email})
+        if(student) {
+
+            // sendMail(student.email)
+            const token = jwt.sign(student.id, 'mykey')
+            return res.status(200).json({token, message: "User authenticated successfully!", user: student })
+        }
+        
+        // if user email doesn't exist
+        // const password = generator.generate({
+        //     length: 10,
+        //     numbers: true
+        // });
+
+        student = await Student.create({
+            name, email, password: '123456'
+        })
+        // sendMail(student.email)
+        const jwtToken = jwt.sign(student.id, 'mykey')
+        return res.status(200).json({token: jwtToken, message: "User authenticated successfully!" })
+
+    }catch(error) {
+
+        console.log(error)
+        return res.status(500).json({
+            message: "Server error"
+        })
+
+    }
+
+    
 })
 
 
