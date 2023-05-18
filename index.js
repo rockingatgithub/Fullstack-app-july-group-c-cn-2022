@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken')
 const cors = require('cors')
 const { OAuth2Client } = require('google-auth-library')
+const events = require('events')
 
 const db = require('./config/mongoose')
 // const passport = require('./config/passportLocalStrategy')
@@ -12,6 +13,22 @@ const passport = require('./config/passportJWTStrategy')
 const Student = require('./model/student')
 const PORT = 8000
 const app = express()
+
+
+
+// configuration for chart socket
+
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:3000",
+    }
+});
+
+// confiuguration for chat socket ends
 
 let counter = 0
 app.use(cors())
@@ -264,7 +281,36 @@ app.post("/google", async (req, res) => {
 })
 
 
-app.listen(PORT, () => {
+// Event and event handling
+
+// const eventObj = new events()
+
+// eventObj.on('hello', (data) => { 
+//     console.log("The data from event", data)
+// })
+// eventObj.on('hello', (data) => { 
+//     console.log("The data from event", data)
+// })
+
+// eventObj.emit('hello', { message: "This is a nodejs event object."  })
+
+io.on('connection', (socket) => {
+    
+    console.log("A user connected!")
+
+    socket.on('client-event', (data) => {
+
+        io.emit('server-event', data)
+
+    })
+
+})
+
+
+
+
+
+server.listen(PORT, () => {
     console.log("Server successfully started!")
 })
 
