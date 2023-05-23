@@ -222,11 +222,11 @@ app.post("/google", async (req, res) => {
 
     try{
 
-        const client = new OAuth2Client('738549752925-ghcfe4qgitliag9vp7bm7vcvt3e0gdor.apps.googleusercontent.com')
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
         const { token }  = req.body
         const ticket = await client.verifyIdToken({
             idToken: token,
-            audience: '738549752925-ghcfe4qgitliag9vp7bm7vcvt3e0gdor.apps.googleusercontent.com'
+            audience: process.env.GOOGLE_CLIENT_ID
         });
         const { name, email, picture } = ticket.getPayload();    
     
