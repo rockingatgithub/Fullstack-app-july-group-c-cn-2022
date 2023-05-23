@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken')
 const cors = require('cors')
 const { OAuth2Client } = require('google-auth-library')
+require('dotenv').config()
 
 const db = require('./config/mongoose')
 // const passport = require('./config/passportLocalStrategy')
